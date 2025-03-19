@@ -3,6 +3,7 @@ use std::{str::FromStr, thread::sleep, time::Duration};
 use chrono::NaiveDate;
 use futures::future::join_all;
 use reqwest::Client;
+use sqlx::PgPool;
 
 use crate::data_access::db::AddPerson;
 
@@ -40,4 +41,18 @@ pub async fn warm_up(localhost: &str, endpoint: &str) {
     join_all(rqts).await;
 
     println!("warmup enqueueing concluded....");
+}
+
+pub async fn remove_warm_up(pg_pool: &PgPool) -> Result<(), sqlx::Error> {
+    sleep(Duration::from_secs(10));
+
+    println!("cleaning warm up entries....");
+
+    sqlx::query("delete from people where nickname ilike '%WARMUP%';")
+        .execute(pg_pool)
+        .await?;
+
+    println!("cleaned all warm up entries....");
+
+    Ok(())
 }
