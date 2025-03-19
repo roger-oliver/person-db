@@ -7,7 +7,7 @@ use lapin::{
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::db::{db_bulk_insert, AddPerson, Person};
+use crate::data_access::db::{db_bulk_insert, AddPerson, Person};
 
 pub async fn queue_person_create_request(
     add_person: &AddPerson,
