@@ -1,3 +1,4 @@
+mod config;
 mod data_access;
 mod queue;
 mod redis;
