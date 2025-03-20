@@ -1,6 +1,6 @@
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
-use sqlx::{PgPool, prelude::FromRow};
+use sqlx::{prelude::FromRow, PgPool};
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, FromRow)]
@@ -27,10 +27,10 @@ pub async fn db_add_person(
     let id = Uuid::new_v4();
 
     let person = sqlx::query_as::<_, Person>(
-        r#"INSERT INTO public.people
-                       (id, full_name, nickname, birth, stack)
+        r#"INSERT INTO people
+                       (id, full_name, nickname, birth, skills)
                  VALUES($1, $2, $3, $4, $5)
-                 RETURNING id, full_name, nickname, birth, stack;"#,
+                 RETURNING id, full_name, nickname, birth, skills;"#,
     )
     .bind(id)
     .bind(&person_to_add.full_name)
@@ -48,7 +48,7 @@ pub async fn db_get_people_by_param(
     search: String,
 ) -> Result<Vec<Person>, sqlx::Error> {
     let people = sqlx::query_as::<_, Person>(
-        r#"SELECT id, full_name, nickname, birth, stack FROM PEOPLE WHERE search_trgm ILIKE $1;"#,
+        r#"SELECT id, full_name, nickname, birth, skills FROM PEOPLE WHERE search_trgm ILIKE $1;"#,
     )
     .bind(format!("%{}%", search))
     .fetch_all(pg_pool)
@@ -93,7 +93,7 @@ fn parse_people_to_csv(people: &[Person]) -> String {
 
     for person in people {
         csv_data.push_str(&format!(
-            "{}/t{}/t{}/t{}/t{}/n",
+            "{}\t{}\t{}\t{}\t{}\n",
             person.id,
             person.full_name,
             person.nickname,

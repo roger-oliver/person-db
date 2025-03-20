@@ -43,13 +43,13 @@ pub async fn warm_up(localhost: &str, endpoint: &str) {
     println!("warmup enqueueing concluded....");
 }
 
-pub async fn remove_warm_up(pg_pool: &PgPool) -> Result<(), sqlx::Error> {
+pub async fn remove_warm_up(pg_pool: PgPool) -> Result<(), sqlx::Error> {
     sleep(Duration::from_secs(10));
 
     println!("cleaning warm up entries....");
 
     sqlx::query("delete from people where nickname ilike '%WARMUP%';")
-        .execute(pg_pool)
+        .execute(&pg_pool)
         .await?;
 
     println!("cleaned all warm up entries....");
