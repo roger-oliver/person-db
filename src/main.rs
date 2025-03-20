@@ -1,6 +1,8 @@
 use actix_web::{http::KeepAlive, web, App, HttpServer};
 use config::settings::Settings;
-use controller::create_person;
+use controller::{
+    add_person, create_person, get_count_people, get_people_by_param, get_person_by_id,
+};
 use data_access::warmup_jobs::{remove_warm_up, warm_up};
 use futures::TryFutureExt;
 use queue::queue_batch_fetch_people;
@@ -72,6 +74,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .app_data(web::Data::new(redis_client.clone()))
             .app_data(web::Data::new(rabbitmq_channel.clone()))
             .service(create_person)
+            .service(get_count_people)
+            .service(get_people_by_param)
+            .service(get_person_by_id)
+            .service(add_person)
     })
     .keep_alive(KeepAlive::Os)
     .bind(settings.server.get_url())?

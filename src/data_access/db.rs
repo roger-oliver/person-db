@@ -57,6 +57,14 @@ pub async fn db_get_people_by_param(
     Ok(people)
 }
 
+pub async fn db_count_people(pg_pool: &PgPool) -> Result<i64, sqlx::Error> {
+    let count =
+        sqlx::query_scalar("select count(*) from people where nickname not ilike 'WARMUP_DATA';")
+            .fetch_one(pg_pool)
+            .await?;
+    Ok(count)
+}
+
 pub async fn db_get_person_by_id(pg_pool: &PgPool, id: Uuid) -> Result<Person, sqlx::Error> {
     let person = sqlx::query_as::<_, Person>(
         r#"SELECT id, full_name, nickname, birth, skills FROM PEOPLE WHERE id = $1;"#,
