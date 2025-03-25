@@ -15,40 +15,46 @@ mod redis;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let settings = Settings::new().map_err(|e| {
-        eprintln!("failed to initialise settings. Error: {}", e);
-        e
-    })?;
-
-    let pg_pool = settings
-        .postgres
-        .create_pool()
-        .map_err(|e| {
-            eprintln!("failed to create postgres pool. Error {}", e);
+    let (server, pg_pool, redis_client, rabbitmq_channel) = {
+        let settings = Settings::new().map_err(|e| {
+            eprintln!("failed to initialise settings. Error: {}", e);
             e
-        })
-        .await?;
+        })?;
 
-    let redis_client = settings
-        .redis
-        .create_client()
-        .map_err(|e| {
-            eprintln!("failed to create redis client. Error {}", e);
-            e
-        })
-        .await?;
+        let pg_pool = settings
+            .postgres
+            .create_pool()
+            .map_err(|e| {
+                eprintln!("failed to create postgres pool. Error {}", e);
+                e
+            })
+            .await?;
 
-    let rabbitmq_channel = settings
-        .rabbit
-        .create_channel()
-        .map_err(|e| {
-            eprintln!("failed to create rabbit client connection. Error {}", e);
-            e
-        })
-        .await?;
+        let redis_client = settings
+            .redis
+            .create_client()
+            .map_err(|e| {
+                eprintln!("failed to create redis client. Error {}", e);
+                e
+            })
+            .await?;
+
+        let rabbitmq_channel = settings
+            .rabbit
+            .create_channel()
+            .map_err(|e| {
+                eprintln!("failed to create rabbit client connection. Error {}", e);
+                e
+            })
+            .await?;
+
+        let server = settings.server;
+
+        (server, pg_pool, redis_client, rabbitmq_channel)
+    };
 
     tokio::spawn({
-        let server_host = settings.server.get_url().clone();
+        let server_host = server.get_url().clone();
         let endpoint = "people";
 
         async move { warm_up(&server_host, endpoint).await }
@@ -80,7 +86,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .service(add_person)
     })
     .keep_alive(KeepAlive::Os)
-    .bind(settings.server.get_url())?
+    .bind(server.get_url())?
     .run()
     .await?;
 
