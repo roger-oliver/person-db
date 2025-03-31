@@ -1,0 +1,8 @@
+target:
+	cargo build --release
+
+image:
+	docker build . -t orogerio/person-db
+
+push-image:
+	docker push orogerio/person-db
