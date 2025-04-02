@@ -1,0 +1,123 @@
+version: "3.5"
+
+services:
+  api01: &api
+    image: orogerio/person-db
+    env_file:
+      - .env
+    environment:
+      POSTGRES__HOST: ${POSTGRES__HOST}
+      POSTGRES__PORT: ${POSTGRES__PORT}
+      POSTGRES__DB_NAME: ${POSTGRES__DB_NAME}
+      POSTGRES__USER: ${POSTGRES__USER}
+      POSTGRES__PASSWORD: ${POSTGRES__PASSWORD}
+      POSTGRES__POOL_SIZE: ${POSTGRES__POOL_SIZE}
+      POSTGRES__ACQUIRE_TIMEOUT: ${POSTGRES__ACQUIRE_TIMEOUT}
+      POSTGRES__IDLE_TIMEOUT: ${POSTGRES__IDLE_TIMEOUT}
+      REDIS__HOST: ${REDIS__HOST}
+      REDIS__PORT: ${REDIS__PORT}
+      RABBIT__HOST: ${RABBIT__HOST}
+      RABBIT__PORT: ${RABBIT__PORT}
+      RABBIT__USER: ${RABBIT__USER}
+      RABBIT__PASSWORD: ${RABBIT__PASSWORD}
+      RABBIT__QUEUE_NAME: ${RABBIT__QUEUE_NAME}
+      SERVER__HOST: ${SERVER__HOST}
+      SERVER__PORT: 8080
+    depends_on:
+      - db
+      - redis
+      - rabbitmq
+    deploy:
+      resources:
+        limits:
+          cpus: "0.15"
+          memory: "0.4GB"
+    network_mode: "host"
+
+  api02:
+    <<: *api
+    env_file:
+      - .env
+    environment:
+      SERVER__PORT: 8081
+
+  nginx: # Load Balancer
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api01
+      - api02
+    deploy:
+      resources:
+        limits:
+          cpus: "0.15"
+          memory: "0.5GB"
+    network_mode: "host"
+
+  db: # Banco de dados
+    image: postgres
+    env_file:
+      - .env
+    hostname: db
+    environment:
+      POSTGRES_USER: ${POSTGRES__USER}
+      POSTGRES_PASSWORD: ${POSTGRES__PASSWORD}
+      POSTGRES_DB: ${POSTGRES__DB_NAME}
+    volumes:
+      - ./db-init.sql:/docker-entrypoint-initdb.d/db-init.sql
+      - ./postgresql.conf:/docker-entrypoint-initdb.d/postgresql.conf
+    command: postgres -c config_file=/docker-entrypoint-initdb.d/postgresql.conf
+    network_mode: "host"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES__USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.9"
+          memory: "1.4GB"
+
+  redis:
+    image: redis
+    hostname: redis
+    command: redis-server --save "" --appendonly no --maxclients 20000
+    deploy:
+      resources:
+        limits:
+          cpus: "0.15"
+          memory: "0.3GB"
+    network_mode: "host"
+
+  rabbitmq:
+    image: rabbitmq:4
+    env_file:
+      - .env
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBIT__USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT__PASSWORD}
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+    # create a command to create a queue.
+    command: >
+      sh -c "rabbitmqadmin declare queue name=${RABBIT__QUEUE_NAME} durable=true;"
+
+    # command: >
+    #   sh -c "rabbitmqctl add_user ${RABBIT__USER} ${RABBIT__PASSWORD};
+    #          rabbitmqctl set_user_tags ${RABBIT__USER} administrator;
+    #          rabbitmqctl add_vhost people-queue;
+    #          rabbitmqctl set_permissions -p people-queue ${RABBIT__USER} ".*".".*".".*";"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.15"
+          memory: "0.3GB"
+    network_mode: "host"
+
+volumes:
+  rabbitmq:
+    driver: local
