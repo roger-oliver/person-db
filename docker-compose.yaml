@@ -16,7 +16,7 @@ services:
       POSTGRES__IDLE_TIMEOUT: ${POSTGRES__IDLE_TIMEOUT}
       REDIS__HOST: ${REDIS__HOST}
       REDIS__PORT: ${REDIS__PORT}
-      RABBIT__HOST: ${RABBIT__HOST}
+      RABBIT__HOST: ${REDIS__HOST}
       RABBIT__PORT: ${RABBIT__PORT}
       RABBIT__USER: ${RABBIT__USER}
       RABBIT__PASSWORD: ${RABBIT__PASSWORD}
@@ -32,7 +32,7 @@ services:
         limits:
           cpus: "0.15"
           memory: "0.4GB"
-    network_mode: "host"
+    network_mode: host
 
   api02:
     <<: *api
@@ -53,7 +53,7 @@ services:
         limits:
           cpus: "0.15"
           memory: "0.5GB"
-    network_mode: "host"
+    network_mode: host
 
   db: # Banco de dados
     image: postgres
@@ -68,9 +68,9 @@ services:
       - ./db-init.sql:/docker-entrypoint-initdb.d/db-init.sql
       - ./postgresql.conf:/docker-entrypoint-initdb.d/postgresql.conf
     command: postgres -c config_file=/docker-entrypoint-initdb.d/postgresql.conf
-    network_mode: "host"
+    network_mode: host
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES__USER}"]
+      test: ["CMD-SHELL", "pg_isready"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -90,21 +90,28 @@ services:
         limits:
           cpus: "0.15"
           memory: "0.3GB"
-    network_mode: "host"
+    network_mode: host
 
   rabbitmq:
-    image: rabbitmq:4
+    image: rabbitmq:4-management
     env_file:
       - .env
     hostname: rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBIT__USER}
       RABBITMQ_DEFAULT_PASS: ${RABBIT__PASSWORD}
+      RABBITMQ_INIT_DB: true
     volumes:
       - rabbitmq:/var/lib/rabbitmq
+      - ./rabbitmq-init.sh:/docker-entrypoint-initdb.d/rabbitmq-init.sh
     # create a command to create a queue.
-    command: >
-      sh -c "rabbitmqadmin declare queue name=${RABBIT__QUEUE_NAME} durable=true;"
+    # command: >
+    #   sh -c "rabbitmqadmin declare queue name=${RABBIT__QUEUE_NAME} durable=true;"
 
     # command: >
     #   sh -c "rabbitmqctl add_user ${RABBIT__USER} ${RABBIT__PASSWORD};
@@ -116,8 +123,12 @@ services:
         limits:
           cpus: "0.15"
           memory: "0.3GB"
-    network_mode: "host"
+    network_mode: host
+
+networks:
+  default:
+    external: true
 
 volumes:
   rabbitmq:
-    driver: local
+
