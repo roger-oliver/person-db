@@ -108,26 +108,14 @@ services:
       RABBITMQ_INIT_DB: true
     volumes:
       - rabbitmq:/var/lib/rabbitmq
-      - ./rabbitmq-init.sh:/docker-entrypoint-initdb.d/rabbitmq-init.sh
-    # create a command to create a queue.
-    # command: >
-    #   sh -c "rabbitmqadmin declare queue name=${RABBIT__QUEUE_NAME} durable=true;"
-
-    # command: >
-    #   sh -c "rabbitmqctl add_user ${RABBIT__USER} ${RABBIT__PASSWORD};
-    #          rabbitmqctl set_user_tags ${RABBIT__USER} administrator;
-    #          rabbitmqctl add_vhost people-queue;
-    #          rabbitmqctl set_permissions -p people-queue ${RABBIT__USER} ".*".".*".".*";"
+      - ./definitions.json:/etc/rabbitmq/definitions.json
+      - ./rabbitmq.conf:/etc/rabbitmq/conf.d/99-config.conf
     deploy:
       resources:
         limits:
           cpus: "0.15"
           memory: "0.3GB"
     network_mode: host
-
-networks:
-  default:
-    external: true
 
 volumes:
   rabbitmq:
