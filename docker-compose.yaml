@@ -24,9 +24,12 @@ services:
       SERVER__HOST: ${SERVER__HOST}
       SERVER__PORT: 8080
     depends_on:
-      - db
-      - redis
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     deploy:
       resources:
         limits:
@@ -78,9 +81,9 @@ services:
     network_mode: host
     healthcheck:
       test: ["CMD-SHELL", "pg_isready"]
-      interval: 5s
+      interval: 30s
       timeout: 5s
-      retries: 20
+      retries: 5
       start_period: 10s
     deploy:
       resources:
@@ -98,6 +101,11 @@ services:
           cpus: "0.15"
           memory: "0.3GB"
     network_mode: host
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:4-management
