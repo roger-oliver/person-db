@@ -123,7 +123,7 @@ services:
       RABBITMQ_INIT_DB: true
     volumes:
       - rabbitmq:/var/lib/rabbitmq
-      - ./definitions.json:/etc/rabbitmq/definitions.json
+      - ./rabbitmq-definitions.json:/etc/rabbitmq/definitions.json
       - ./rabbitmq.conf:/etc/rabbitmq/conf.d/99-config.conf
     deploy:
       resources:
