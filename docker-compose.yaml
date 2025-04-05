@@ -16,7 +16,7 @@ services:
       POSTGRES__IDLE_TIMEOUT: ${POSTGRES__IDLE_TIMEOUT}
       REDIS__HOST: ${REDIS__HOST}
       REDIS__PORT: ${REDIS__PORT}
-      RABBIT__HOST: ${REDIS__HOST}
+      RABBIT__HOST: ${RABBIT__HOST}
       RABBIT__PORT: ${RABBIT__PORT}
       RABBIT__USER: ${RABBIT__USER}
       RABBIT__PASSWORD: ${RABBIT__PASSWORD}
@@ -33,6 +33,10 @@ services:
           cpus: "0.15"
           memory: "0.4GB"
     network_mode: host
+    extra_hosts:
+      - "db:127.0.0.1"
+      - "redis:127.0.0.1"
+      - "rabbitmq:127.0.0.1"
 
   api02:
     <<: *api
@@ -54,6 +58,9 @@ services:
           cpus: "0.15"
           memory: "0.5GB"
     network_mode: host
+    extra_hosts:
+      - "api01:127.0.0.1"
+      - "api02:127.0.0.1"
 
   db: # Banco de dados
     image: postgres
