@@ -1,5 +1,5 @@
 use config::{Config, Environment};
-use dotenvy::dotenv;
+use dotenvy::{dotenv, from_filename};
 use serde::Deserialize;
 
 use super::{
@@ -17,7 +17,12 @@ pub struct Settings {
 
 impl Settings {
     pub fn new() -> Result<Self, config::ConfigError> {
-        dotenv().ok();
+        // dotenv().ok();
+
+        from_filename(".env.local")
+            .or_else(|_| dotenv())
+            .ok();
+
 
         Ok(Config::builder()
             .add_source(Environment::default().separator("__").list_separator("__"))
