@@ -21,7 +21,7 @@ services:
       RABBIT__USER: ${RABBIT__USER}
       RABBIT__PASSWORD: ${RABBIT__PASSWORD}
       RABBIT__QUEUE_NAME: ${RABBIT__QUEUE_NAME}
-      SERVER__HOST: ${SERVER__HOST}
+      SERVER__HOST: api01
       SERVER__PORT: 8080
     depends_on:
       rabbitmq:
@@ -35,17 +35,11 @@ services:
         limits:
           cpus: "0.15"
           memory: "0.4GB"
-    network_mode: host
-    extra_hosts:
-      - "db:127.0.0.1"
-      - "redis:127.0.0.1"
-      - "rabbitmq:127.0.0.1"
 
   api02:
     <<: *api
-    env_file:
-      - .env
     environment:
+      SERVER__HOST: api02
       SERVER__PORT: 8081
 
   nginx: # Load Balancer
@@ -60,10 +54,8 @@ services:
         limits:
           cpus: "0.15"
           memory: "0.5GB"
-    network_mode: host
-    extra_hosts:
-      - "api01:127.0.0.1"
-      - "api02:127.0.0.1"
+    ports:
+      - "9999:9999"
 
   db: # Banco de dados
     image: postgres
@@ -78,7 +70,8 @@ services:
       - ./db-init.sql:/docker-entrypoint-initdb.d/db-init.sql
       - ./postgresql.conf:/docker-entrypoint-initdb.d/postgresql.conf
     command: postgres -c config_file=/docker-entrypoint-initdb.d/postgresql.conf
-    network_mode: host
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready"]
       interval: 30s
@@ -100,7 +93,8 @@ services:
         limits:
           cpus: "0.15"
           memory: "0.3GB"
-    network_mode: host
+    # ports:
+    #   - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -130,7 +124,9 @@ services:
         limits:
           cpus: "0.15"
           memory: "0.3GB"
-    network_mode: host
+    # ports:
+    #   - "5672:5672"
+    #   - "15672:15672"
 
 volumes:
   rabbitmq:

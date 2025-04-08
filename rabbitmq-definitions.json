@@ -11,7 +11,7 @@
     ],
     "queues": [
       {
-        "name": "${RABBIT__QUEUE_NAME}",
+        "name": "people-queue",
         "vhost": "/",
         "durable": true,
         "auto_delete": false,
