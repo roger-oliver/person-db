@@ -80,7 +80,15 @@ Create a new queue named `people-queue`
 cargo run
 ```
 
-The API will start on the default port (usually 8080).
+### 5. Have the configuration file in place
+
+The `.env.local` needs to be in the "project root directory" to have it working locally.
+
+The API will start on the default port (usually 8080, but you can change in the `.env.local` file).
+
+To debug on visual studio code, add the following line in your "launch.json" file:
+
+`"envFile": "${workspaceFolder}/.env.local"`
 
 ## Getting started - Using docker compose file
 
@@ -102,6 +110,8 @@ docker-compose up -d
 
 This file contains the configuration for running multiple services: PostgreSQL, Redis, RabbitMQ, and your Rust API. It's located in `src/`.
 
+Pay attention that the `.env` file will be used by default when the docker compose runs. It one or all containers are not communicating, please check if you changed the `.env` file.
+
 ### Makefile
 
 The Makefile is used to build and manage Docker images and containers. It includes targets for building a release version of your application or pushing an image to a Docker registry. Located in `src/`. You need to be logged in with your docker account and you need to change the path to your account, if you'd like to store your onw compiled image of "person-db" web api.
@@ -113,8 +123,6 @@ Nginx configuration file for load balancing between Rust API instances. Found in
 ### definitions.json
 
 RabbitMQ definition file to configure queues and permissions. Stored in `src/`.
-
-### rabbitmq-init.sh
 
 ## Project Structure
 
